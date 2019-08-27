@@ -8,4 +8,4 @@ def blah():
     print cmds.ls()
     print sys.path
     print 'blah'
-    raise SystemExit(0)
+    raise RuntimeError("oops")
