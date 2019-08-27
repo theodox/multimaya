@@ -5,17 +5,20 @@ import os
 import ast
 import sys
 
-from maya import maya_executable, mayapy_executable
+from mayapy import  mayapy_executable
 
 SCRIPT_TEMPLATE = '''# multimaya launcher shim
 import os
-import {modname}
+import sys
+
 if __name__ == '__main__':
-    {init}
+    import {modname}
     try:
-        {funcname}()
+        {modname}.{funcname}()
+        print cmds.ls()
         sys.exit(0)
-    except:
+    except Exception as e:
+        print(e)
         sys.exit(-1)
 '''
 
@@ -28,7 +31,7 @@ def generate_wrapper(func, initialize=True, ):
 
     init = ''
     if initialize:
-        init = 'import maya.standalone; maya.standalone.initialize()'
+        init = 'maya.standalone.initialize()\r\n'
 
     modulename = inspect.getmodule(func).__name__
     return SCRIPT_TEMPLATE.format(modname=modulename, init=init, funcname=func.__name__)
@@ -51,7 +54,9 @@ def launch_mayapy(func):
 
     script = function_to_script(func)
     arguments = [mayapy_executable(), script]
-    subprocess.check_call(arguments, env={"PYTHONPATH": ";".join(sys.path)})
+    env = os.environ.copy()
+    env['PYTHONPATH'] = ";".join(sys.path)
+    subprocess.check_call(arguments, env=env)
 
 # test - remove
 if __name__ == '__main__':
